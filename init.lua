@@ -1,9 +1,9 @@
--- dmshved v1.0
+-- dmshved v1.1
 -- hello there :)
 
 vim.opt.termguicolors = true
 vim.cmd.colorscheme("habamax")
-vim.api.nvim_set_hl(0, "Normal", { fg = vim.api.nvim_get_hl(0, { name = 'Normal' }).fg, bg = '#000000' })
+vim.api.nvim_set_hl(0, "Normal", { fg = vim.api.nvim_get_hl(0, { name = "Normal" }).fg, bg = "#000000" })
 
 -- =======================================================================================================================
 -- options
@@ -41,6 +41,7 @@ vim.opt.conceallevel = 2 -- obsidian requirement
 vim.opt.concealcursor = "" -- do not hide cursorline in markup
 vim.opt.synmaxcol = 300 -- syntax highlighting limit
 vim.opt.fillchars = { eob = " " } -- hide "~" on empty lines
+vim.opt.display = "lastline"
 
 local undodir = vim.fn.expand("~/.vim/undodir")
 if
@@ -112,7 +113,7 @@ end
 local function file_type()
 	local ft = vim.bo.filetype
 	local icons = {
-    cs = "\u{f031b} ", -- nf-dev-cs
+		cs = "\u{f031b} ", -- nf-dev-cs
 		lua = "\u{e620} ", -- nf-dev-lua
 		python = "\u{e73c} ", -- nf-dev-python
 		javascript = "\u{e74e} ", -- nf-dev-javascript
@@ -210,24 +211,23 @@ vim.cmd([[
 local function setup_dynamic_statusline()
 	vim.api.nvim_create_autocmd({ "WinEnter", "BufEnter" }, {
 		callback = function()
-      vim.opt_local.statusline = table.concat({
-        -- "  ",
-        " ",
-        "%#StatusLineBold#",
-        "%{v:lua.mode_icon()}",
-        "%#StatusLine#",
-        " | %f %h%m%r", -- nf-pl-left_hard_divider
-        "%{v:lua.git_branch()}",
-        "| ", -- nf-pl-left_hard_divider
-        "%{v:lua.file_type()}",
-        "| ", -- nf-pl-left_hard_divider
-        "%{v:lua.file_size()}",
-        "%=", -- Right-align everything after this
-        " | pos: %l:%c %P | \u{f017} %{strftime('%H:%M')}", -- cursor position and clock
-        -- " | pos: %l:%c %P | %{strftime('%d-%B-%A | \u{f017} %H:%M')}", -- cursor position, date and clock
-        " ",
-      })
-    end,
+			vim.opt_local.statusline = table.concat({
+				" ",
+				"%#StatusLineBold#",
+				"%{v:lua.mode_icon()}",
+				"%#StatusLine#",
+				" | %f %h%m%r", -- nf-pl-left_hard_divider
+				"%{v:lua.git_branch()}",
+				"| ", -- nf-pl-left_hard_divider
+				"%{v:lua.file_type()}",
+				"| ", -- nf-pl-left_hard_divider
+				"%{v:lua.file_size()}",
+				"%=", -- Right-align everything after this
+				" | pos: %l:%c %P | \u{f017} %{strftime('%H:%M')}", -- cursor position and clock
+				-- " | pos: %l:%c %P | %{strftime('%d-%B-%A | \u{f017} %H:%M')}", -- cursor position, date and clock
+				" ",
+			})
+		end,
 	})
 	vim.api.nvim_set_hl(0, "StatusLineBold", { bold = true })
 
@@ -308,7 +308,7 @@ vim.keymap.set("n", "<leader>pa", function() -- show file path
 end, { desc = "Copy full file path" })
 
 vim.keymap.set("n", "<leader>td", function()
-  vim.diagnostic.enable(not vim.diagnostic.is_enabled())
+	vim.diagnostic.enable(not vim.diagnostic.is_enabled())
 end, { desc = "Toggle diagnostics" })
 
 -- =======================================================================================================================
@@ -317,62 +317,129 @@ end, { desc = "Toggle diagnostics" })
 
 local augroup = vim.api.nvim_create_augroup("UserConfig", { clear = true })
 
--- Format on save (ONLY real file buffers, ONLY when efm is attached)
-vim.api.nvim_create_autocmd("BufWritePre", {
-	group = augroup,
-	pattern = {
-        "*.cs",
-		"*.lua",
-		"*.py",
-		"*.go",
-		"*.js",
-		"*.jsx",
-		"*.ts",
-		"*.tsx",
-		"*.json",
-		"*.css",
-		"*.scss",
-		"*.html",
-		"*.sh",
-		"*.bash",
-		"*.zsh",
-		"*.c",
-		"*.cpp",
-		"*.h",
-		"*.hpp",
-	},
-	callback = function(args)
-		-- avoid formatting non-file buffers (helps prevent weird write prompts)
-		if vim.bo[args.buf].buftype ~= "" then
-			return
-		end
-		if not vim.bo[args.buf].modifiable then
-			return
-		end
-		if vim.api.nvim_buf_get_name(args.buf) == "" then
-			return
-		end
+-- format on keymap(ONLY real file buffers, ONLY when efm is attached and for roslyn separately)
+vim.api.nvim_create_user_command("Format", function()
+	local bufnr = vim.api.nvim_get_current_buf()
 
-		local has_efm = false
-		for _, c in ipairs(vim.lsp.get_clients({ bufnr = args.buf })) do
-			if c.name == "efm" then
-				has_efm = true
-				break
-			end
-		end
-		if not has_efm then
-			return
-		end
+	-- avoid formatting non-file buffers (helps prevent weird write prompts)
+	if vim.bo[bufnr].buftype ~= "" then
+		return
+	end
 
+	if not vim.bo[bufnr].modifiable then
+		return
+	end
+
+	if vim.api.nvim_buf_get_name(bufnr) == "" then
+		return
+	end
+
+	-- c# will be formatted by roslyn
+	if vim.bo[bufnr].filetype == "cs" then
 		pcall(vim.lsp.buf.format, {
-			bufnr = args.buf,
+			bufnr = bufnr,
 			timeout_ms = 2000,
 			filter = function(c)
-				return c.name == "efm"
+				return c.name == "roslyn_ls"
 			end,
 		})
-	end,
-})
+
+		return
+	end
+
+	local has_efm = false
+	for _, c in ipairs(vim.lsp.get_clients({ bufnr = bufnr })) do
+		if c.name == "efm" then
+			has_efm = true
+			break
+		end
+	end
+
+	if not has_efm then
+		return
+	end
+
+	pcall(vim.lsp.buf.format, {
+		bufnr = bufnr,
+		timeout_ms = 2000,
+		filter = function(c)
+			return c.name == "efm"
+		end,
+	})
+end, { desc = "Format code with :Format" })
+
+-- -- format on save (ONLY real file buffers, ONLY when efm is attached and for roslyn separately)
+-- vim.api.nvim_create_autocmd("BufWritePre", {
+-- 	group = augroup,
+-- 	pattern = {
+-- 		"*.cs",
+-- 		"*.lua",
+-- 		"*.py",
+-- 		"*.go",
+-- 		"*.js",
+-- 		"*.jsx",
+-- 		"*.ts",
+-- 		"*.tsx",
+-- 		"*.json",
+-- 		"*.css",
+-- 		"*.scss",
+-- 		"*.html",
+-- 		"*.sh",
+-- 		"*.bash",
+-- 		"*.zsh",
+-- 		"*.c",
+-- 		"*.cpp",
+-- 		"*.h",
+-- 		"*.hpp",
+-- 	},
+-- 	callback = function(args)
+-- 		-- avoid formatting non-file buffers (helps prevent weird write prompts)
+-- 		if vim.bo[args.buf].buftype ~= "" then
+-- 			return
+-- 		end
+--
+-- 		if not vim.bo[args.buf].modifiable then
+-- 			return
+-- 		end
+--
+-- 		if vim.api.nvim_buf_get_name(args.buf) == "" then
+-- 			return
+-- 		end
+--
+-- 		-- c# will be formatted by roslyn_ls
+-- 		if vim.bo[args.buf].filetype == "cs" then
+-- 			pcall(vim.lsp.buf.format, {
+-- 				bufnr = args.buf,
+-- 				timeout_ms = 2000,
+-- 				filter = function(c)
+-- 					return c.name == "roslyn_ls"
+-- 				end,
+-- 			})
+--
+-- 			return
+-- 		end
+--
+-- 		local has_efm = false
+-- 		for _, c in ipairs(vim.lsp.get_clients({ bufnr = args.buf })) do
+-- 			if c.name == "efm" then
+-- 				has_efm = true
+-- 				break
+-- 			end
+-- 		end
+--
+-- 		if not has_efm then
+-- 			return
+-- 		end
+--
+-- 		pcall(vim.lsp.buf.format, {
+-- 			bufnr = args.buf,
+-- 			timeout_ms = 2000,
+-- 			filter = function(c)
+-- 				return c.name == "efm"
+-- 			end,
+-- 		})
+-- 	end,
+-- })
 
 -- -- default highlight yanked text
 -- vim.api.nvim_create_autocmd("TextYankPost", {
@@ -384,8 +451,8 @@ vim.api.nvim_create_autocmd("BufWritePre", {
 
 -- light blue highlight yanked color
 vim.api.nvim_set_hl(0, "YankHighlight", {
-  bg = "#90D5FF",
-  fg = "#1e1e1e",
+	bg = "#90D5FF",
+	fg = "#1e1e1e",
 })
 
 -- highlight yanked text
@@ -393,9 +460,9 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 	group = augroup,
 	callback = function()
 		vim.hl.on_yank({
-      higroup = "YankHighlight",
-      timeout = 100,
-    })
+			higroup = "YankHighlight",
+			timeout = 100,
+		})
 	end,
 })
 
@@ -429,4 +496,595 @@ vim.api.nvim_create_autocmd("FileType", {
 		vim.opt_local.linebreak = true
 		vim.opt_local.spell = true
 	end,
+})
+
+-- =======================================================================================================================
+-- plugins (vim.pack)
+-- =======================================================================================================================
+
+vim.pack.add({
+	-- gitsigns.nvim
+	"https://github.com/lewis6991/gitsigns.nvim",
+
+	-- mini.nvim
+	"https://www.github.com/echasnovski/mini.nvim",
+
+	-- nvim-treesitter
+	{
+		src = "https://github.com/nvim-treesitter/nvim-treesitter",
+		branch = "main",
+		build = ":TSUpdate",
+	},
+
+	-- easy-dotnet.nvim
+	"https://github.com/GustavEikaas/easy-dotnet.nvim",
+
+	-- language server protocols
+	"https://www.github.com/neovim/nvim-lspconfig",
+	"https://github.com/mason-org/mason.nvim",
+	"https://github.com/creativenull/efmls-configs-nvim",
+	{
+		src = "https://github.com/saghen/blink.cmp",
+		version = vim.version.range("1.*"),
+	},
+	"https://github.com/L3MON4D3/LuaSnip",
+
+	-- nvim-tree
+	-- "https://www.github.com/nvim-tree/nvim-tree.lua",
+
+	-- fzf-lua
+	"https://www.github.com/ibhagwan/fzf-lua",
+
+	-- plenary (harpoon dependency)
+	"https://github.com/nvim-lua/plenary.nvim",
+
+	-- harpoon
+	{
+		src = "https://github.com/theprimeagen/harpoon",
+		branch = "harpoon2",
+	},
+
+    -- rustaceanvim
+    "https://github.com/mrcjkb/rustaceanvim",
+})
+
+-- =======================================================================================================================
+-- plugin configs
+-- =======================================================================================================================
+
+-- nvim-treesitter
+config =
+	function()
+		local ts = require("nvim-treesitter")
+		local parsers = {
+			"c_sharp",
+			"vim",
+			"vimdoc",
+			"diff",
+			"dockerfile",
+			"git_config",
+			"gitcommit",
+			"gitignore",
+			"rust",
+			"c",
+			"cpp",
+			"go",
+			"html",
+			"css",
+			"javascript",
+			"json",
+			"lua",
+			"markdown",
+			"python",
+			"typescript",
+			"vue",
+			"bash",
+			"yaml",
+			"toml",
+		}
+
+		for _, parser in ipairs(parsers) do
+			ts.install(parser)
+		end
+
+		-- Not every tree-sitter parser is the same as the file type detected
+		-- So the patterns need to be registered more cleverly
+		local patterns = {}
+		for _, parser in ipairs(parsers) do
+			local parser_patterns = vim.treesitter.language.get_filetypes(parser)
+			for _, pp in pairs(parser_patterns) do
+				table.insert(patterns, pp)
+			end
+		end
+
+		vim.treesitter.language.register("groovy", "Jenkinsfile")
+		vim.wo[0][0].foldexpr = "v:lua.vim.treesitter.foldexpr()"
+		vim.wo[0][0].foldmethod = "expr"
+
+		vim.api.nvim_create_autocmd("FileType", {
+			pattern = patterns,
+			callback = function()
+				vim.treesitter.start()
+			end,
+		})
+	end,
+	-- nvim-tree
+	-- require("nvim-tree").setup({
+	-- 	view = {
+	-- 		width = 35,
+	--         side = "right",
+	-- 	},
+	-- 	filters = {
+	-- 		dotfiles = false,
+	-- 	},
+	-- 	renderer = {
+	-- 		group_empty = true,
+	-- 	},
+	-- })
+	-- vim.keymap.set("n", "<leader>e", function()
+	-- 	require("nvim-tree.api").tree.toggle()
+	-- end, { desc = "Toggle NvimTree" })
+	--
+	-- vim.api.nvim_set_hl(0, "NvimTreeNormalNC", { bg = "none" })
+	-- vim.api.nvim_set_hl(0, "SignColumn", { bg = "none" })
+	-- vim.api.nvim_set_hl(0, "NvimTreeSignColumn", { bg = "none" })
+	-- vim.api.nvim_set_hl(0, "NvimTreeNormal", { bg = "none" })
+	-- vim.api.nvim_set_hl(0, "NvimTreeWinSeparator", { fg = "#2a2a2a", bg = "none" })
+	-- vim.api.nvim_set_hl(0, "NvimTreeEndOfBuffer", { bg = "none" })
+	-- fzf-lua
+	require("fzf-lua").setup({})
+
+vim.keymap.set("n", "<leader>ff", function()
+	require("fzf-lua").files()
+end, { desc = "FZF Files" })
+
+vim.keymap.set("n", "<leader>fg", function()
+	require("fzf-lua").live_grep()
+end, { desc = "FZF Live Grep" })
+
+vim.keymap.set("n", "<leader>fb", function()
+	require("fzf-lua").buffers()
+end, { desc = "FZF Buffers" })
+
+vim.keymap.set("n", "<leader>fh", function()
+	require("fzf-lua").help_tags()
+end, { desc = "FZF Help Tags" })
+
+vim.keymap.set("n", "<leader>fx", function()
+	require("fzf-lua").diagnostics_document()
+end, { desc = "FZF Diagnostics Document" })
+
+vim.keymap.set("n", "<leader>fX", function()
+	require("fzf-lua").diagnostics_workspace()
+end, { desc = "FZF Diagnostics Workspace" })
+
+-- harpoon
+require("harpoon").setup({})
+
+local harpoon = require("harpoon")
+harpoon:setup()
+
+vim.keymap.set("n", "<leader>a", function()
+	harpoon:list():add()
+end, { desc = "Harpoon Add File" })
+
+vim.keymap.set("n", "<C-e>", function()
+	harpoon.ui:toggle_quick_menu(harpoon:list())
+end, { desc = "Harpoon Toggle Quick Menu" })
+
+vim.keymap.set("n", "<C-h>", function()
+	harpoon:list():select(1)
+end, { desc = "Harpoon Select 1" })
+
+vim.keymap.set("n", "<C-t>", function()
+	harpoon:list():select(2)
+end, { desc = "Harpoon Select 2" })
+
+vim.keymap.set("n", "<C-s>", function()
+	harpoon:list():select(3)
+end, { desc = "Harpoon Select 3" })
+
+vim.keymap.set("n", "<C-n>", function()
+	harpoon:list():next()
+end, { desc = "Harpoon Next" })
+
+vim.keymap.set("n", "<C-p>", function()
+	harpoon:list():prev()
+end, { desc = "Harpoon Previous" })
+
+-- mini.nvim
+require("mini.ai").setup({}) -- Extend and create a/i textobjects
+require("mini.comment").setup({})
+require("mini.move").setup({})
+require("mini.surround").setup({})
+require("mini.cursorword").setup({})
+-- require("mini.indentscope").setup({
+--     draw = {
+--         animation = require('mini.indentscope').gen_animation.none(),
+--     },
+--
+--     -- symbol = '╎',
+--     symbol = '|',
+-- })
+
+require("mini.pairs").setup({})
+require("mini.trailspace").setup({})
+require("mini.bufremove").setup({})
+require("mini.icons").setup({})
+
+-- gitsigns.nvim
+require("gitsigns").setup({
+	signs = {
+		add = { text = "\u{2590}" },
+		change = { text = "\u{2590}" },
+		delete = { text = "\u{2590}" },
+		topdelete = { text = "\u{25e6}" },
+		changedelete = { text = "\u{25cf}" },
+		untracked = { text = "\u{25cb}" },
+	},
+	signcolumn = true,
+	current_line_blame = false,
+})
+
+vim.keymap.set("n", "]h", function()
+	require("gitsigns").next_hunk()
+end, { desc = "Next git hunk" })
+
+vim.keymap.set("n", "[h", function()
+	require("gitsigns").prev_hunk()
+end, { desc = "Previous git hunk" })
+
+vim.keymap.set("n", "<leader>hs", function()
+	require("gitsigns").stage_hunk()
+end, { desc = "Stage hunk" })
+
+vim.keymap.set("n", "<leader>hr", function()
+	require("gitsigns").reset_hunk()
+end, { desc = "Reset hunk" })
+
+vim.keymap.set("n", "<leader>hp", function()
+	require("gitsigns").preview_hunk()
+end, { desc = "Preview hunk" })
+
+vim.keymap.set("n", "<leader>hb", function()
+	require("gitsigns").blame_line({ full = true })
+end, { desc = "Blame line" })
+
+vim.keymap.set("n", "<leader>hB", function()
+	require("gitsigns").toggle_current_line_blame()
+end, { desc = "Toggle inline blame" })
+
+vim.keymap.set("n", "<leader>hd", function()
+	require("gitsigns").diffthis()
+end, { desc = "Diff this" })
+
+-- mason
+require("mason").setup({})
+
+-- easy-dotnet.nvim
+local dotnet = require("easy-dotnet")
+
+dotnet.setup({
+	dependencies = {},
+	config = function()
+		dotnet.setup({
+			managed_terminal = {},
+			external_terminal = nil,
+			projx_lsp = {},
+			lsp = {
+				enabled = true, -- enable builtin roslyn lsp
+				set_fold_expr = false,
+				preload_roslyn = true, -- start loading roslyn before any buffer is opened
+				roslynator_enabled = true, -- autometically enable roslynator analyzer
+				easy_dotnet_analyzer_enabled = true, -- enable roslyn analyzer from easy-dotnet-server
+				restart_roslyn_on_branch_change = false, -- restart Roslyn when Git HEAD changes
+				auto_refresh_codelens = false, -- true by default
+				suggest_updates = false, -- periodically suggest roslyn-language-server updates
+				analyzer_assemblies = {}, -- any additional roslyn analyzers you might use like SonarAnalyzer.CSharp
+				razor = {
+					enabled = true,
+					html = {
+						enabled = true,
+						cmd = nil, -- auto-detect project node_modules/.bin/vscode-html-language-server, then PATH
+						request_timeout = 5000,
+					},
+				},
+				config = {
+					settings = {
+						["csharp|code_lens"] = {
+							dotnet_enable_references_code_lens = false,
+						},
+					},
+                },
+			},
+			debugger = {},
+			---@type TestRunnerOptions
+			test_runner = {},
+			new = {
+				project = {
+					prefix = "sln", -- "sln" | "none"
+				},
+			},
+			csproj_mappings = true,
+			fsproj_mappings = true,
+			auto_bootstrap_namespace = {
+				--block_scoped, file_scoped
+				type = "block_scoped",
+				enabled = true,
+				use_clipboard_json = {},
+			},
+			server = {
+				---@type nil | "Off" | "Critical" | "Error" | "Warning" | "Information" | "Verbose" | "All"
+				log_level = nil,
+			},
+			picker = "fzf",
+			notifications = {},
+			diagnostics = {
+				default_severity = "error",
+				setqflist = false,
+			},
+			outdated = {
+				mappings = {},
+			}
+		})
+
+		vim.api.nvim_create_user_command("Secrets", function()
+			dotnet.secrets()
+		end, { desc = "Easy Dotnet Secrets" })
+
+		vim.keymap.set("n", "<C-p>", function()
+			dotnet.run_project()
+		end, { desc = "Easy Dotnet Run Project" })
+	end,
+})
+
+-- =======================================================================================================================
+-- lsp, linting, formatting & completion
+-- =======================================================================================================================
+
+local diagnostic_signs = {
+	Error = "\u{f057} ",
+	Warn = "\u{f071} ",
+	Hint = "\u{ea61}",
+	Info = "\u{f05a}",
+}
+
+vim.diagnostic.config({
+	virtual_text = { prefix = "\u{f0764}", spacing = 4 },
+	signs = {
+		text = {
+			[vim.diagnostic.severity.ERROR] = diagnostic_signs.Error,
+			[vim.diagnostic.severity.WARN] = diagnostic_signs.Warn,
+			[vim.diagnostic.severity.INFO] = diagnostic_signs.Info,
+			[vim.diagnostic.severity.HINT] = diagnostic_signs.Hint,
+		},
+	},
+	underline = true,
+	update_in_insert = false,
+	severity_sort = true,
+	float = {
+		-- border = "rounded",
+		border = "square",
+		source = true,
+		header = "",
+		prefix = "",
+		focusable = false,
+		style = "minimal",
+	},
+})
+
+do
+	local orig = vim.lsp.util.open_floating_preview
+	function vim.lsp.util.open_floating_preview(contents, syntax, opts, ...)
+		opts = opts or {}
+		opts.border = opts.border or "rounded"
+		return orig(contents, syntax, opts, ...)
+	end
+end
+
+local function lsp_on_attach(ev)
+	local client = vim.lsp.get_client_by_id(ev.data.client_id)
+	if not client then
+		return
+	end
+
+	local bufnr = ev.buf
+	local opts = { noremap = true, silent = true, buffer = bufnr }
+
+	vim.keymap.set("n", "<leader>gd", function()
+		require("fzf-lua").lsp_definitions({ jump_to_single_result = true })
+	end, opts)
+
+	vim.keymap.set("n", "<leader>gD", vim.lsp.buf.definition, opts)
+
+	vim.keymap.set("n", "<leader>gS", function()
+		vim.cmd("vsplit")
+		vim.lsp.buf.definition()
+	end, opts)
+
+	vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, opts)
+	vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
+
+	vim.keymap.set("n", "<leader>D", function()
+		vim.diagnostic.open_float({ scope = "line" })
+	end, opts)
+	vim.keymap.set("n", "<leader>d", function()
+		vim.diagnostic.open_float({ scope = "cursor" })
+	end, opts)
+	vim.keymap.set("n", "<leader>nd", function()
+		vim.diagnostic.jump({ count = 1 })
+	end, opts)
+
+	vim.keymap.set("n", "<leader>pd", function()
+		vim.diagnostic.jump({ count = -1 })
+	end, opts)
+
+	vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
+
+	vim.keymap.set("n", "<leader>fr", function()
+		require("fzf-lua").lsp_references()
+	end, opts)
+	vim.keymap.set("n", "<leader>ft", function()
+		require("fzf-lua").lsp_typedefs()
+	end, opts)
+	vim.keymap.set("n", "<leader>fs", function()
+		require("fzf-lua").lsp_document_symbols()
+	end, opts)
+	vim.keymap.set("n", "<leader>fw", function()
+		require("fzf-lua").lsp_workspace_symbols()
+	end, opts)
+	vim.keymap.set("n", "<leader>fi", function()
+		require("fzf-lua").lsp_implementations()
+	end, opts)
+
+	if client:supports_method("textDocument/codeAction", bufnr) then
+		vim.keymap.set("n", "<leader>oi", function()
+			vim.lsp.buf.code_action({
+				context = { only = { "source.organizeImports" }, diagnostics = {} },
+				apply = true,
+				bufnr = bufnr,
+			})
+			vim.defer_fn(function()
+				vim.lsp.buf.format({ bufnr = bufnr })
+			end, 50)
+		end, opts)
+	end
+end
+
+vim.api.nvim_create_autocmd("LspAttach", { group = augroup, callback = lsp_on_attach })
+
+vim.keymap.set("n", "<leader>q", function()
+	vim.diagnostic.setloclist({ open = true })
+end, { desc = "Open diagnostic list" })
+vim.keymap.set("n", "<leader>dl", vim.diagnostic.open_float, { desc = "Show line diagnostics" })
+
+-- blink.cmp
+require("blink.cmp").setup({
+	keymap = {
+		preset = "none",
+		["<C-Space>"] = { "show", "hide" },
+		["<CR>"] = { "accept", "fallback" },
+		["<C-j>"] = { "select_next", "fallback" },
+		["<C-k>"] = { "select_prev", "fallback" },
+		["<Tab>"] = { "snippet_forward", "fallback" },
+		["<S-Tab>"] = { "snippet_backward", "fallback" },
+	},
+	appearance = { nerd_font_variant = "mono" },
+	completion = {
+		menu = {
+			auto_show = function()
+				return vim.bo.filetype ~= "markdown"
+			end,
+		},
+	},
+	sources = { default = { "lsp", "path", "buffer", "snippets" } },
+	snippets = {
+		expand = function(snippet)
+			require("luasnip").lsp_expand(snippet)
+		end,
+	},
+	fuzzy = {
+		implementation = "prefer_rust",
+		prebuilt_binaries = { download = true },
+	},
+})
+
+vim.lsp.config["*"] = {
+	capabilities = require("blink.cmp").get_lsp_capabilities(),
+}
+
+vim.lsp.config("lua_ls", {
+	settings = {
+		Lua = {
+			diagnostics = { globals = { "vim" } },
+			telemetry = { enable = false },
+		},
+	},
+})
+
+vim.lsp.config("pyright", {})
+vim.lsp.config("bashls", {})
+vim.lsp.config("ts_ls", {})
+vim.lsp.config("gopls", {})
+vim.lsp.config("clangd", {})
+
+vim.g.rustaceanvim = {
+	server = {
+		capabilities = require("blink.cmp").get_lsp_capabilities(),
+	},
+}
+
+-- linting & formatting
+do
+	local luacheck = require("efmls-configs.linters.luacheck")
+	local stylua = require("efmls-configs.formatters.stylua")
+
+	local flake8 = require("efmls-configs.linters.flake8")
+	local black = require("efmls-configs.formatters.black")
+
+	local prettier_d = require("efmls-configs.formatters.prettier_d")
+	local eslint_d = require("efmls-configs.linters.eslint_d")
+
+	local fixjson = require("efmls-configs.formatters.fixjson")
+
+	local shellcheck = require("efmls-configs.linters.shellcheck")
+	local shfmt = require("efmls-configs.formatters.shfmt")
+
+	local cpplint = require("efmls-configs.linters.cpplint")
+	local clangfmt = require("efmls-configs.formatters.clang_format")
+
+	local go_revive = require("efmls-configs.linters.go_revive")
+	local gofumpt = require("efmls-configs.formatters.gofumpt")
+
+	vim.lsp.config("efm", {
+		filetypes = {
+			"c",
+			"cpp",
+			"css",
+			"go",
+			"html",
+			"javascript",
+			"javascriptreact",
+			"json",
+			"jsonc",
+			"lua",
+			"markdown",
+			"python",
+			"sh",
+			"typescript",
+			"typescriptreact",
+			"vue",
+		},
+		init_options = { documentFormatting = true },
+		settings = {
+			languages = {
+				c = { clangfmt, cpplint },
+				go = { gofumpt, go_revive },
+				cpp = { clangfmt, cpplint },
+				css = { prettier_d },
+				html = { prettier_d },
+				javascript = { eslint_d, prettier_d },
+				javascriptreact = { eslint_d, prettier_d },
+				json = { eslint_d, fixjson },
+				jsonc = { eslint_d, fixjson },
+				lua = { luacheck, stylua },
+				markdown = { prettier_d },
+				python = { flake8, black },
+				sh = { shellcheck, shfmt },
+				typescript = { eslint_d, prettier_d },
+				typescriptreact = { eslint_d, prettier_d },
+				vue = { eslint_d, prettier_d },
+			},
+		},
+	})
+end
+
+vim.lsp.enable({
+	"lua_ls",
+	"pyright",
+	"bashls",
+	"ts_ls",
+	"gopls",
+	"clangd",
+	"efm",
 })
