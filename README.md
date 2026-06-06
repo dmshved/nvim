@@ -4,8 +4,11 @@ My minimalistic nvim config.
 # Supported languages
 
 - c#
+- c++
+- c
 - rust
 - go
+- bash
 - typescript | javascript
 - python
 - lua
@@ -26,4 +29,7 @@ Enabled by default
 Disabled by default
   - nvim-tree
   - mini.nvim (partially)
+
+# License
+This software is licensed under the MIT license
 ```
