@@ -76,7 +76,7 @@ vim.opt.encoding = "utf-8" -- set encoding
 -- vim.opt.guicursor =
 -- 	"n-v-c:block,i-ci-ve:block,r-cr:hor20,o:hor50" -- cursor block settings
 
--- Folding: requires treesitter available at runtime; safe fallback if not
+-- folding: requires treesitter available at runtime; safe fallback if not
 vim.opt.foldmethod = "expr" -- use expression for folding
 vim.opt.foldexpr = "v:lua.vim.treesitter.foldexpr()" -- use treesitter for folding
 vim.opt.foldlevel = 99 -- start with all folds open
@@ -94,12 +94,12 @@ vim.opt.maxmempattern = 20000 -- increase max memory
 -- status line
 -- =======================================================================================================================
 
--- Git branch function with caching and Nerd Font icon
+-- git branch function with caching and Nerd Font icon
 local cached_branch = ""
 local last_check = 0
 local function git_branch()
 	local now = vim.uv.now()
-	if now - last_check > 5000 then -- Check every 5 seconds
+	if now - last_check > 5000 then -- check every 5 seconds
 		cached_branch = vim.fn.system("git branch --show-current 2>/dev/null | tr -d '\n'")
 		last_check = now
 	end
@@ -109,7 +109,7 @@ local function git_branch()
 	return ""
 end
 
--- File type with Nerd Font icon
+-- file type with Nerd Font icon
 local function file_type()
 	local ft = vim.bo.filetype
 	local icons = {
@@ -160,7 +160,7 @@ local function file_type()
 	return ((icons[ft] or " \u{f15b} ") .. ft)
 end
 
--- File size with Nerd Font icon
+-- file size with Nerd Font icon
 local function file_size()
 	local size = vim.fn.getfsize(vim.fn.expand("%"))
 	if size < 0 then
@@ -177,7 +177,7 @@ local function file_size()
 	return " \u{f016} " .. size_str .. " " -- nf-fa-file_o
 end
 
--- Mode indicators with Nerd Font icons
+-- mode indicators with Nerd Font icons
 local function mode_icon()
 	local mode = vim.fn.mode()
 	local modes = {
@@ -207,7 +207,7 @@ vim.cmd([[
   highlight StatusLineBold gui=bold cterm=bold
 ]])
 
--- Function to change statusline based on window focus
+-- function to change statusline based on window focus
 local function setup_dynamic_statusline()
 	vim.api.nvim_create_autocmd({ "WinEnter", "BufEnter" }, {
 		callback = function()
@@ -222,7 +222,7 @@ local function setup_dynamic_statusline()
 				"%{v:lua.file_type()}",
 				"| ", -- nf-pl-left_hard_divider
 				"%{v:lua.file_size()}",
-				"%=", -- Right-align everything after this
+				"%=", -- right-align everything after this
 				" | pos: %l:%c %P | \u{f017} %{strftime('%H:%M')}", -- cursor position and clock
 				-- " | pos: %l:%c %P | %{strftime('%d-%B-%A | \u{f017} %H:%M')}", -- cursor position, date and clock
 				" ",
@@ -334,7 +334,6 @@ vim.api.nvim_create_user_command("Format", function()
 		return
 	end
 
-	-- c# will be formatted by roslyn
 	if vim.bo[bufnr].filetype == "cs" then
 		pcall(vim.lsp.buf.format, {
 			bufnr = bufnr,
@@ -545,7 +544,12 @@ vim.pack.add({
 	},
 
     -- rustaceanvim
-    "https://github.com/mrcjkb/rustaceanvim",
+    {
+        src = 'https://github.com/mrcjkb/rustaceanvim',
+        -- To avoid being surprised by breaking changes,
+        -- I recommend you set a version range
+        version = vim.version.range('^9')
+    }
 })
 
 -- =======================================================================================================================
@@ -587,8 +591,8 @@ config =
 			ts.install(parser)
 		end
 
-		-- Not every tree-sitter parser is the same as the file type detected
-		-- So the patterns need to be registered more cleverly
+		-- not every tree-sitter parser is the same as the file type detected
+		-- so the patterns need to be registered more cleverly
 		local patterns = {}
 		for _, parser in ipairs(parsers) do
 			local parser_patterns = vim.treesitter.language.get_filetypes(parser)
@@ -631,8 +635,9 @@ config =
 	-- vim.api.nvim_set_hl(0, "NvimTreeNormal", { bg = "none" })
 	-- vim.api.nvim_set_hl(0, "NvimTreeWinSeparator", { fg = "#2a2a2a", bg = "none" })
 	-- vim.api.nvim_set_hl(0, "NvimTreeEndOfBuffer", { bg = "none" })
-	-- fzf-lua
-	require("fzf-lua").setup({})
+
+-- fzf-lua
+require("fzf-lua").setup({})
 
 vim.keymap.set("n", "<leader>ff", function()
 	require("fzf-lua").files()
@@ -693,7 +698,7 @@ vim.keymap.set("n", "<C-p>", function()
 end, { desc = "Harpoon Previous" })
 
 -- mini.nvim
-require("mini.ai").setup({}) -- Extend and create a/i textobjects
+require("mini.ai").setup({}) -- extend and create a/i textobjects
 require("mini.comment").setup({})
 require("mini.move").setup({})
 require("mini.surround").setup({})
@@ -1007,6 +1012,7 @@ vim.lsp.config("bashls", {})
 vim.lsp.config("ts_ls", {})
 vim.lsp.config("gopls", {})
 vim.lsp.config("clangd", {})
+vim.lsp.config("rustaceanvim", {})
 
 vim.g.rustaceanvim = {
 	server = {
@@ -1081,6 +1087,7 @@ end
 
 vim.lsp.enable({
 	"lua_ls",
+	"rustaceanvim",
 	"pyright",
 	"bashls",
 	"ts_ls",

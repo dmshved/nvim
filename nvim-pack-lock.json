@@ -135,7 +135,8 @@
     },
     "rustaceanvim": {
       "rev": "8e87073774fda6b6b055675ef7154553ff324db4",
-      "src": "https://github.com/mrcjkb/rustaceanvim"
+      "src": "https://github.com/mrcjkb/rustaceanvim",
+      "version": "9.0.0 - 10.0.0"
     },
     "rusty": {
       "rev": "f310310991ecd50ca10745f8960cb5b8bd2ef208",
