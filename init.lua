@@ -278,7 +278,7 @@ vim.keymap.set("n", "<leader>bp", ":bprevious<CR>", { desc = "Previous buffer" }
 -- vim.keymap.set("n", "<C-l>", "<cmd>TmuxNavigateRight<CR>", { desc = "Move to right window/pane" })
 
 -- alacrity panes settings
-vim.keymap.set("n", "<C-h>", "<C-w>h", { desc = "Move to left window/pane" })
+vim.keymap.set("n", "<C-i>", "<C-w>h", { desc = "Move to left window/pane" })
 vim.keymap.set("n", "<C-j>", "<C-w>j", { desc = "Move to bottom window/pane" })
 vim.keymap.set("n", "<C-k>", "<C-w>k", { desc = "Move to top window/pane" })
 vim.keymap.set("n", "<C-l>", "<C-w>l", { desc = "Move to right window/pane" })
