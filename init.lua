@@ -901,6 +901,10 @@ local function lsp_on_attach(ev)
 
 	vim.keymap.set("n", "<leader>gD", vim.lsp.buf.definition, opts)
 
+	vim.keymap.set("n", "<leader>e", function()
+		vim.diagnostic.open_float({ focusable = true })
+	end, opts)
+
 	vim.keymap.set("n", "<leader>gS", function()
 		vim.cmd("vsplit")
 		vim.lsp.buf.definition()
