@@ -1,9 +1,12 @@
 -- dmshved v1.1
 -- hello there :)
 
+-- default colorscheme
+-- vim.opt.termguicolors = true
+-- vim.cmd.colorscheme("habamax")
+-- vim.api.nvim_set_hl(0, "Normal", { fg = vim.api.nvim_get_hl(0, { name = "Normal" }).fg, bg = "#000000" })
+
 vim.opt.termguicolors = true
-vim.cmd.colorscheme("habamax")
-vim.api.nvim_set_hl(0, "Normal", { fg = vim.api.nvim_get_hl(0, { name = "Normal" }).fg, bg = "#000000" })
 
 -- =======================================================================================================================
 -- options
@@ -449,10 +452,10 @@ end, { desc = "Format code with :Format" })
 -- })
 
 -- light blue highlight yanked color
-vim.api.nvim_set_hl(0, "YankHighlight", {
-	bg = "#90D5FF",
-	fg = "#1e1e1e",
-})
+-- vim.api.nvim_set_hl(0, "YankHighlight", {
+-- 	bg = "#90D5FF",
+-- 	fg = "#1e1e1e",
+-- })
 
 -- highlight yanked text
 vim.api.nvim_create_autocmd("TextYankPost", {
@@ -502,6 +505,9 @@ vim.api.nvim_create_autocmd("FileType", {
 -- =======================================================================================================================
 
 vim.pack.add({
+    -- -- vscode.nvim
+    "https://github.com/mofiqul/vscode.nvim",
+
 	-- gitsigns.nvim
 	"https://github.com/lewis6991/gitsigns.nvim",
 
@@ -555,6 +561,143 @@ vim.pack.add({
 -- =======================================================================================================================
 -- plugin configs
 -- =======================================================================================================================
+
+-- colorscheme
+require("vscode.colors").get_colors()
+require("vscode").setup({
+    -- keep terminal colors unchanged
+    terminal_colors = false,
+
+    color_overrides = {
+        -- gutter line
+        vscBack = "#000000",
+        vscLineNumber = "#767676",
+        vscComment = "#767676",
+    },
+
+    group_overrides = {
+        -- bg
+        SignColumn = { bg = "#000000" },
+        LineNr = { bg = "#000000", fg = "#767676" },
+        CursorLineNr = { bg = "#000000", fg = "#c7c7c7" },
+        FoldColumn = { bg = "#000000" },
+
+        -- comments
+        Comment = { fg = "#767676", italic = false },
+        ["@comment"] = { fg = "#767676" },
+        ["@comment.documentation"] = { fg = "#767676" },
+
+        -- xml documentation
+        ["@lsp.type.xmlDocCommentName.cs"] = { fg = "#767676" },
+        ["@lsp.type.xmlDocCommentName"] = { fg = "#767676" },
+        ["@lsp.type.xmlDocCommentDelimiter.cs"] = { fg = "#767676" },
+        ["@lsp.type.xmlDocCommentDelimiter"] = { fg = "#767676" },
+        ["@lsp.type.xmlDocCommentAttributeName.cs"] = { fg = "#767676" },
+        ["@lsp.type.xmlDocCommentAttributeName"] = { fg = "#767676" },
+        ["@lsp.type.xmlDocCommentAttributeQuotes.cs"] = { fg = "#767676" },
+        ["@lsp.type.xmlDocCommentAttributeQuotes"] = { fg = "#767676" },
+
+        -- xml tags
+        ["@lsp.type.class.xml"] = { fg = "#569cd6" },
+        ["xmlTag"] = { fg = "#767676" },
+
+        -- strings (green)
+        String = { fg = "#5faf5f" },
+        ["@string"] = { fg = "#5faf5f" },
+
+        -- escape sequences (\t, \n)
+        SpecialChar = { fg = "#5f8787" },
+        ["@string.escape"] = { fg = "#5f8787" },
+
+        -- primitive types
+        Type = { fg = "#5f87af" },
+        ["@type.builtin"] = { fg = "#5f87af" },
+
+        -- classes
+        ["@type"] = { fg = "#42a692" },
+        ["@type.definition"] = { fg = "#42a692" },
+
+        -- interfaces
+        ["@lsp.type.interface"] = { fg = "#b8d7a3" },
+
+        -- variables, parameters (calmer)
+        Identifier = { fg = "#87afaf" },
+        ["@variable"] = { fg = "#87afaf" },
+        ["@lsp.type.parameter"] = { fg = "#87afaf" },
+        ["@lsp.type.parameter.cs"] = { fg = "#87afaf" },
+
+        -- properties
+        ["@property"] = { fg = "#c7c7c7" },
+
+        -- numbers (pink)
+        Number = { fg = "#d75f87" },
+        Float = { fg = "#d75f87" },
+        ["@number"] = { fg = "#d75f87" },
+
+        -- keywords
+        ["@lsp.type.controlKeyword"] = { fg = "#af87af" },
+        ["@lsp.type.controlKeyword.cs"] = { fg = "#af87af" },
+
+        -- operators
+        Delimiter = { fg = "#c7c7c7" },
+        ["@operator"] = { fg = "#c7c7c7" },
+
+        -- punctuation
+        Delimiter = { fg = "#c7c7c7" },
+        ["@punctuation.delimiter"] = { fg = "#c7c7c7" },
+        ["@punctuation.bracket"] = { fg = "#c7c7c7" },
+        ["@punctuation.special"] = { fg = "#c7c7c7" },
+
+        -- macro
+        ["@lsp.type.macro.cs"] = { fg = "#767676" },
+    },
+})
+
+vim.cmd.colorscheme("vscode")
+vim.api.nvim_set_hl(0, "Normal", { fg = vim.api.nvim_get_hl(0, { name = "Normal" }).fg, bg = "#000000" })
+
+-- light blue highlight yanked color
+vim.api.nvim_set_hl(0, "YankHighlight", {
+	bg = "#90D5FF",
+	fg = "#1e1e1e",
+})
+
+-- status line colors
+-- default
+vim.api.nvim_set_hl(0, "StatusLine", {
+    fg = "#151515",
+    bg = "#9e9e9e"
+})
+
+-- dark
+-- vim.api.nvim_set_hl(0, "StatusLine", {
+--     fg = "#ffffff",
+--     bg = "#151515",
+-- })
+
+-- blink.cmp colors
+vim.api.nvim_set_hl(0, "BlinkCmpMenu", { bg = "#3a3a3a", })
+vim.api.nvim_set_hl(0, "BlinkCmpMenuSelection", { fg = "#c7c7c7", bg = "#585858", })
+vim.api.nvim_set_hl(0, "BlinkCmpLabel", { fg = "#c7c7c7", })
+vim.api.nvim_set_hl(0, "BlinkCmpLabelMatch", { fg = "#569cd6", bold = true, })
+vim.api.nvim_set_hl(0, "BlinkCmpKind", { fg = "#dcdcaa", })
+
+-- diagnostics colors
+vim.api.nvim_set_hl(0, "DiagnosticVirtualTextHint", { fg = "#c7c7c7", bg = "#000000", })
+vim.api.nvim_set_hl(0, "DiagnosticVirtualTextInfo", { fg = "#add8e6", bg = "#000000", })
+vim.api.nvim_set_hl(0, "DiagnosticVirtualTextWarn", { fg = "#ffa500", bg = "#000000", })
+vim.api.nvim_set_hl(0, "DiagnosticVirtualTextError", { fg = "#ff0000", bg = "#000000", })
+
+vim.api.nvim_set_hl(0, "DiagnosticSignHint", { fg = "#c7c7c7", bg = "#000000", })
+vim.api.nvim_set_hl(0, "DiagnosticSignInfo", { fg = "#add8e6", bg = "#000000", })
+vim.api.nvim_set_hl(0, "DiagnosticSignWarn", { fg = "#ffa500", bg = "#000000", })
+vim.api.nvim_set_hl(0, "DiagnosticSignError", { fg = "#ff0000", bg = "#000000", })
+
+-- matching brackets colors
+vim.api.nvim_set_hl(0, "MatchParen", {
+    bg = "NONE",
+    fg = "#fa03ab",
+})
 
 -- nvim-treesitter
 config =
