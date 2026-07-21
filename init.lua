@@ -650,6 +650,10 @@ require("vscode").setup({
 
         -- macro
         ["@lsp.type.macro.cs"] = { fg = "#767676" },
+
+        -- directory
+        ["netrwDir"] = { fg = "#86aeaa" },
+        ["netrwClassify"] = { fg = "#86aeaa" },
     },
 })
 
