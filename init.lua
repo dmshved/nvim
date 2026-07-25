@@ -500,6 +500,10 @@ vim.api.nvim_create_autocmd("FileType", {
 	end,
 })
 
+-- disable automatic comment wrapping and insertion of comment leaders
+vim.cmd('autocmd BufEnter * set formatoptions-=cro')
+vim.cmd('autocmd BufEnter * setlocal formatoptions-=cro')
+
 -- =======================================================================================================================
 -- plugins (vim.pack)
 -- =======================================================================================================================
@@ -1038,6 +1042,10 @@ local function lsp_on_attach(ev)
 	if not client then
 		return
 	end
+
+    if client.name == "easy_dotnet" then
+        client.server_capabilities.codeLensProvider = nil
+    end
 
 	local bufnr = ev.buf
 	local opts = { noremap = true, silent = true, buffer = bufnr }
